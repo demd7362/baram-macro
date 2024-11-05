@@ -1,5 +1,6 @@
 import sys
 import time
+from typing import override
 
 import keyboard
 import pydirectinput
@@ -8,6 +9,44 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QLabel, QPushButton,
                              QVBoxLayout, QWidget, QSystemTrayIcon, QMenu)
 
 macro_name = '도사 매크로'
+key_map = {
+    # Function keys
+    16777264: 'f1',
+    16777265: 'f2',
+    16777266: 'f3',
+    16777267: 'f4',
+    16777268: 'f5',
+    16777269: 'f6',
+    16777270: 'f7',
+    16777271: 'f8',
+    16777272: 'f9',
+    16777273: 'f10',
+    16777274: 'f11',
+    16777275: 'f12',
+
+    # Special keys
+    16777216: 'esc',
+    16777217: 'tab',
+    16777220: 'enter',  # 일반 Enter
+    16777221: 'enter',  # 숫자패드 Enter
+    16777223: 'backspace',
+    16777219: 'del',
+    16777234: 'left',
+    16777236: 'right',
+    16777235: 'up',
+    16777237: 'down',
+    16777232: 'home',
+    16777233: 'end',
+    16777238: 'pageup',
+    16777239: 'pagedown',
+    16777222: 'insert',
+    16777252: 'capslock',
+    16777248: 'shift',
+    16777249: 'ctrl',
+    16777251: 'alt',
+    32: 'space',
+}
+
 keys = {
     'macro_key': {
         'name': '매크로 실행',
@@ -70,92 +109,18 @@ class MacroWorker(QThread):
         self.is_running = False
 
 
-def convert_key_code_to_text(key_code, key_text=None):
+def convert_key_code_to_text(key_code):
     """
     Qt 키 코드를 pydirectinput 호환 텍스트로 변환
 
     Args:
         key_code (int): Qt 키 이벤트의 key code
-        key_text (str, optional): 기본 키 텍스트. 기본값은 None
 
     Returns:
         str: pydirectinput 호환 키 텍스트
     """
-
-    # Function keys (F1-F12)
-    if key_code == 16777264:
-        return 'f1'
-    elif key_code == 16777265:
-        return 'f2'
-    elif key_code == 16777266:
-        return 'f3'
-    elif key_code == 16777267:
-        return 'f4'
-    elif key_code == 16777268:
-        return 'f5'
-    elif key_code == 16777269:
-        return 'f6'
-    elif key_code == 16777270:
-        return 'f7'
-    elif key_code == 16777271:
-        return 'f8'
-    elif key_code == 16777272:
-        return 'f9'
-    elif key_code == 16777273:
-        return 'f10'
-    elif key_code == 16777274:
-        return 'f11'
-    elif key_code == 16777275:
-        return 'f12'
-
-    # Special keys
-    elif key_code == 16777216:
-        return 'esc'
-    elif key_code == 16777217:
-        return 'tab'
-    elif key_code == 16777220:  # 일반 Enter
-        return 'enter'
-    elif key_code == 16777221:  # 숫자패드 Enter
-        return 'enter'
-    elif key_code == 16777223:
-        return 'backspace'
-    elif key_code == 16777219:
-        return 'del'
-    elif key_code == 16777234:
-        return 'left'
-    elif key_code == 16777236:
-        return 'right'
-    elif key_code == 16777235:
-        return 'up'
-    elif key_code == 16777237:
-        return 'down'
-    elif key_code == 16777232:
-        return 'home'
-    elif key_code == 16777233:
-        return 'end'
-    elif key_code == 16777238:
-        return 'pageup'
-    elif key_code == 16777239:
-        return 'pagedown'
-    elif key_code == 16777222:
-        return 'insert'
-    elif key_code == 16777252:
-        return 'capslock'
-    elif key_code == 16777248:
-        return 'shift'
-    elif key_code == 16777249:
-        return 'ctrl'
-    elif key_code == 16777251:
-        return 'alt'
-    elif key_code == 32:
-        return 'space'
-
-    # 일반 키의 경우 입력된 텍스트를 소문자로 반환
-    elif key_text:
-        return key_text.lower()
-
-    # 매칭되는 키가 없는 경우
-    return ''
+    # Qt 키 코드와 pydirectinput 텍스트 매핑
+    return key_map.get(key_code, '')
 
 
 def set_button_enabled(is_enabled):
@@ -264,6 +229,7 @@ class MainWindow(QMainWindow):
         if reason == QSystemTrayIcon.DoubleClick:
             self.show()
 
+    @override
     def closeEvent(self, event):
         if self.tray_icon.isVisible():
             self.hide()
@@ -288,6 +254,7 @@ class MainWindow(QMainWindow):
         self.status_label.setText('키를 입력해주세요. 취소하려면 esc 버튼을 누르세요.')
         set_button_enabled(False)
 
+    @override
     def keyPressEvent(self, event):
         if not self.waiting_for_key:
             return
@@ -304,9 +271,9 @@ class MainWindow(QMainWindow):
             return
 
         is_macro_key = self.waiting_for_key == 'macro_key'
-        # 0 ~ 9
-        if (48 <= key_code <= 57 and not is_macro_key) or (is_macro_key and not 48 <= key_code <= 57):
-            for [key, value] in keys.items(): # check keys
+        number_pressed = 48 <= key_code <= 57
+        if (number_pressed and not is_macro_key) or (is_macro_key and not number_pressed):
+            for [key, value] in keys.items():  # check keys
                 # 키가 겹치는게 존재 && 자기 자신의 키가 아님
                 if value['key'] == key_text and self.waiting_for_key != key:
                     self.status_label.setText(f'{value['name']}에 이미 설정된 키입니다.')
