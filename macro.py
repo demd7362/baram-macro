@@ -293,9 +293,19 @@ class MainWindow(QMainWindow):
         key_text = event.text().upper()
         if not key_text:
             key_text = convert_key_code_to_text(key_code)
+        if key_code == Qt.Key_Escape:  # esc
+            set_button_enabled(True)
+            keys[self.waiting_for_key]['key'] = None
+            keys[self.waiting_for_key]['label'].setText(f'{keys[self.waiting_for_key]['name']} 키: 미설정')
+            self.waiting_for_key = None
+            self.status_label.setText('버튼을 눌러 키를 설정하세요.')
+            return
+
+        is_macro_key = self.waiting_for_key == 'macro_key'
         if self.waiting_for_key:  # 버튼 눌렀을 때
-            if 48 <= key_code <= 57 or self.waiting_for_key == 'macro_key':  # 0 ~ 9 값만 입력가능
-                for [key, value] in keys.items():
+            # 0 ~ 9
+            if (48 <= key_code <= 57 and not is_macro_key) or (is_macro_key and not 48 <= key_code <= 57):
+                for [key, value] in keys.items(): # check keys
                     # 키가 겹치는게 존재 && 자기 자신의 키가 아님
                     if value['key'] == key_text and self.waiting_for_key != key:
                         self.status_label.setText(f'{value['name']}에 이미 설정된 키입니다.')
@@ -306,19 +316,16 @@ class MainWindow(QMainWindow):
                     f'{keys[self.waiting_for_key]['name']} 키: {key_text}')
                 # 모든 버튼 다시 활성화
                 set_button_enabled(True)
-                self.status_label.setText(f'{keys[self.waiting_for_key]['name']} 키가 설정되었습니다!')
 
-                if self.waiting_for_key == 'macro_key':
+                if is_macro_key:
                     self.setup_global_hotkey()
+                else:
+                    self.status_label.setText(f'{keys[self.waiting_for_key]['name']} 키가 설정되었습니다!')
 
                 # 상태 초기화
                 self.waiting_for_key = None
-            elif key_code == Qt.Key_Escape:  # esc
-                set_button_enabled(True)
-                self.waiting_for_key = None
-                self.status_label.setText('버튼을 눌러 키를 설정하세요.')
             else:  # 숫자가 아니라면
-                self.status_label.setText('숫자만 입력 가능합니다.')
+                self.status_label.setText('숫자만 입력 가능합니다.' if not is_macro_key else '숫자는 입력 불가합니다.')
 
 
 def main():
