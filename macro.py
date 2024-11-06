@@ -15,18 +15,26 @@ from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QLabel, QPushButton, QVBoxLayout, QWidget,
     QSystemTrayIcon, QMenu, QStyle, QHBoxLayout, QFrame, QGridLayout
 )
-
+import os
 # 설정 파일 경로
-SETTINGS_FILE = Path('macro_settings.json')
+SETTINGS_FILE = Path('./macro_settings.json')
+DELAY = 0.02
 
-ICON = Path('icon.png')
-GITHUB_ICON = Path('github_icon.png')
 MACRO_NAME = '주수리 헬퍼'
+# ICON = Path('assets/icon.png')
+# GITHUB_ICON = Path('assets/github_icon.png')
+# half_mp_template = cv2.imread('assets/half_mp.png', 0)
+# half_hp_template = cv2.imread('assets/half_hp.png', 0)
+# gongjeung_template = cv2.imread('assets/gongjeung.png', 0)
+# dead_template = cv2.imread('assets/dead.png', 0)
 
-half_mp_template = cv2.imread('./half_mp.png', 0)
-half_hp_template = cv2.imread('./half_hp.png', 0)
-gongjeung_template = cv2.imread('./gongjeung.png', 0)
-dead_template = cv2.imread('./dead.png', 0)
+ICON = Path(os.path.join(getattr(sys, '_MEIPASS', os.path.abspath('.')), 'assets', 'icon.png'))
+GITHUB_ICON = Path(os.path.join(getattr(sys, '_MEIPASS', os.path.abspath('.')), 'assets', 'github_icon.png'))
+half_mp_template = cv2.imread(os.path.join(getattr(sys, '_MEIPASS', os.path.abspath('.')), 'assets', 'half_mp.png'), 0)
+half_hp_template = cv2.imread(os.path.join(getattr(sys, '_MEIPASS', os.path.abspath('.')), 'assets', 'half_hp.png'), 0)
+gongjeung_template = cv2.imread(os.path.join(getattr(sys, '_MEIPASS', os.path.abspath('.')), 'assets', 'gongjeung.png'), 0)
+dead_template = cv2.imread(os.path.join(getattr(sys, '_MEIPASS', os.path.abspath('.')), 'assets', 'dead.png'), 0)
+
 directions = ['left', 'right', 'up', 'down']
 
 
@@ -86,14 +94,14 @@ keys = {
         'label': None,
         'key': None,
         'button': None,
-        'required': True
+        'required': False
     },
     'mana': {
         'name': '공력증강',
         'label': None,
         'key': None,
         'button': None,
-        'required': True
+        'required': False
     },
     'poison': {
         'name': '중독',
@@ -188,6 +196,9 @@ class StyleSheet:
         }
     """
 
+def press_home():
+    keyboard.press_and_release('home') # pydirectinput home 미작동
+    time.sleep(DELAY)
 
 class MacroWorker(QThread):
     """매크로 동작을 위한 워커 스레드"""
@@ -195,7 +206,7 @@ class MacroWorker(QThread):
     def __init__(self):
         super().__init__()
         self.is_running = False
-        self.last_buff_time = 0  # 마지막 버프 시전 시간
+
 
     def run(self):
         heal = keys['heal']['key']
@@ -211,30 +222,45 @@ class MacroWorker(QThread):
         def paralyze_all_directions():
             for direction in directions:
                 pydirectinput.press(paralyze)
-                keyboard.press_and_release('home')
+
                 pydirectinput.press(direction)
                 pydirectinput.press('enter')
         if mujang:
             pydirectinput.press(mujang)
-            keyboard.press_and_release('home')
+            press_home()
             pydirectinput.press('enter')
         if boho:
             pydirectinput.press(boho)
-            keyboard.press_and_release('home')
+            press_home()
             pydirectinput.press('enter')
 
         while self.is_running:
-            try:
-                pydirectinput.press(poison)
-                pydirectinput.press('up')
-                pydirectinput.press('enter')
-                pydirectinput.press(curse)
-                pydirectinput.press('enter')
-                pydirectinput.press(paralyze)
-                pydirectinput.press('enter')
-                screen_gray = capture_screen()
-                is_mp_half = analyze_screen(screen_gray, half_mp_template)
+            pydirectinput.press(poison)
+            pydirectinput.press('up')
+            pydirectinput.press('enter')
+            pydirectinput.press(curse)
+            pydirectinput.press('enter')
+            pydirectinput.press(paralyze)
+            pydirectinput.press('enter')
+            if not heal and not mana:
+                continue
+            screen_gray = capture_screen()
+            if heal:
                 is_hp_half = analyze_screen(screen_gray, half_hp_template)
+                while is_hp_half:
+                    pydirectinput.press(heal)
+                    press_home()
+                    pydirectinput.press('enter')
+                    screen_gray = capture_screen()
+                    is_dead = analyze_screen(screen_gray, dead_template)
+                    if is_dead:
+                        exit_flag = True
+                        break
+                    is_hp_half = analyze_screen(screen_gray, half_hp_template)
+                if exit_flag:
+                    break
+            if mana:
+                is_mp_half = analyze_screen(screen_gray, half_mp_template)
                 if is_mp_half:
                     is_gongjeung_succeed = analyze_screen(screen_gray, gongjeung_template)
                     while not is_gongjeung_succeed:
@@ -245,23 +271,8 @@ class MacroWorker(QThread):
                             exit_flag = True
                             break
                         is_gongjeung_succeed = analyze_screen(screen_gray, gongjeung_template)
-                while is_hp_half:
-                    pydirectinput.press(heal)
-                    keyboard.press_and_release('home')  # pydirectinput home이 작동안함
-                    pydirectinput.press('enter')
-                    screen_gray = capture_screen()
-                    is_dead = analyze_screen(screen_gray, dead_template)
-                    if is_dead:
-                        exit_flag = True
-                        break
-                    is_hp_half = analyze_screen(screen_gray, half_hp_template)
-                if exit_flag:
-                    break
-            except Exception as e:
-                print(f"Error in macro: {e}")
-                self.is_running = False
-                break
-            # time.sleep(0.01)  # CPU 사용률 감소를 위한 최소 딜레이
+
+
 
     def stop(self):
         self.is_running = False
@@ -546,6 +557,6 @@ def main():
 
 
 if __name__ == '__main__':
-    pydirectinput.PAUSE = 0.02
+    pydirectinput.PAUSE = DELAY
     pydirectinput.FAILSAFE = False
     main()
