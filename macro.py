@@ -1,4 +1,5 @@
 import json
+import os
 import sys
 import time
 from pathlib import Path
@@ -13,12 +14,13 @@ from PyQt5.QtCore import Qt, QThread, QSize, QUrl
 from PyQt5.QtGui import QFont, QDesktopServices, QIcon
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QLabel, QPushButton, QVBoxLayout, QWidget,
-    QSystemTrayIcon, QMenu, QStyle, QHBoxLayout, QFrame, QGridLayout
+    QSystemTrayIcon, QMenu, QStyle, QHBoxLayout, QFrame, QGridLayout, QDoubleSpinBox, QSpinBox
 )
-import os
+
 # 설정 파일 경로
 SETTINGS_FILE = Path('./macro_settings.json')
-DELAY = 0.02
+DEFAULT_DELAY = 0.1
+DEFAULT_HEAL_COUNT = 3
 
 MACRO_NAME = '주수리 헬퍼'
 # ICON = Path('assets/icon.png')
@@ -32,7 +34,8 @@ ICON = Path(os.path.join(getattr(sys, '_MEIPASS', os.path.abspath('.')), 'assets
 GITHUB_ICON = Path(os.path.join(getattr(sys, '_MEIPASS', os.path.abspath('.')), 'assets', 'github_icon.png'))
 half_mp_template = cv2.imread(os.path.join(getattr(sys, '_MEIPASS', os.path.abspath('.')), 'assets', 'half_mp.png'), 0)
 half_hp_template = cv2.imread(os.path.join(getattr(sys, '_MEIPASS', os.path.abspath('.')), 'assets', 'half_hp.png'), 0)
-gongjeung_template = cv2.imread(os.path.join(getattr(sys, '_MEIPASS', os.path.abspath('.')), 'assets', 'gongjeung.png'), 0)
+gongjeung_template = cv2.imread(os.path.join(getattr(sys, '_MEIPASS', os.path.abspath('.')), 'assets', 'gongjeung.png'),
+                                0)
 dead_template = cv2.imread(os.path.join(getattr(sys, '_MEIPASS', os.path.abspath('.')), 'assets', 'dead.png'), 0)
 
 directions = ['left', 'right', 'up', 'down']
@@ -42,14 +45,23 @@ def capture_screen():
     screen = pyautogui.screenshot()
     screen_np = numpy.array(screen)
     screen_gray = cv2.cvtColor(screen_np, cv2.COLOR_BGR2GRAY)
+
+    # 노이즈 제거
+    # screen_gray = cv2.GaussianBlur(screen_gray, (3,3), 0)
+    #
+    # # 대비 향상
+    # clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+    # screen_gray = clahe.apply(screen_gray)
+
     return screen_gray
 
 
 def analyze_screen(screen_gray, template):
     result = cv2.matchTemplate(screen_gray, template, cv2.TM_CCOEFF_NORMED)
     min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
+    print(f'max_val: {max_val}')
     # 템플릿이 감지된 경우
-    return max_val >= 0.80  # 임계값을 조절하여 정확도 설정
+    return max_val >= 0.9  # 임계값을 조절하여 정확도 설정
 
 
 key_map = {
@@ -90,7 +102,7 @@ keys = {
     #     'required': False
     # },
     'heal': {
-        'name': '기원',
+        'name': '반피이하 자동 기원',
         'label': None,
         'key': None,
         'button': None,
@@ -196,83 +208,101 @@ class StyleSheet:
         }
     """
 
-def press_home():
-    keyboard.press_and_release('home') # pydirectinput home 미작동
-    time.sleep(DELAY)
+    SPINBOX = """
+        QSpinBox, QDoubleSpinBox {
+            background-color: white;
+            padding: 5px;
+            border: 1px solid #E0E0E0;
+            border-radius: 4px;
+        }
+        QSpinBox:hover, QDoubleSpinBox:hover {
+            border: 1px solid #2196F3;
+        }
+    """
+
 
 class MacroWorker(QThread):
-    """매크로 동작을 위한 워커 스레드"""
-
     def __init__(self):
         super().__init__()
         self.is_running = False
+        self.delay = DEFAULT_DELAY
+        self.heal_count = DEFAULT_HEAL_COUNT
 
+    def press_home(self):
+        keyboard.press_and_release('home')  # pydirectinput home 미작동
+        time.sleep(self.delay)
 
     def run(self):
         heal = keys['heal']['key']
         mana = keys['mana']['key']
-        # attack = keys['attack']['key']
-        # direction_attack = keys['direction_attack']['key']
         poison = keys['poison']['key']
         curse = keys['curse']['key']
         paralyze = keys['paralyze']['key']
-        mujang = keys['mujang']['key']  # 무장
-        boho = keys['boho']['key']  # 보호
+        mujang = keys['mujang']['key']
+        boho = keys['boho']['key']
         exit_flag = False
-        def paralyze_all_directions():
-            for direction in directions:
-                pydirectinput.press(paralyze)
 
-                pydirectinput.press(direction)
-                pydirectinput.press('enter')
         if mujang:
             pydirectinput.press(mujang)
-            press_home()
+            self.press_home()
             pydirectinput.press('enter')
+            time.sleep(0.05)
         if boho:
             pydirectinput.press(boho)
-            press_home()
+            self.press_home()
             pydirectinput.press('enter')
+            time.sleep(0.05)
 
         while self.is_running:
             pydirectinput.press(poison)
             pydirectinput.press('up')
             pydirectinput.press('enter')
+            time.sleep(self.delay)
             pydirectinput.press(curse)
             pydirectinput.press('enter')
+            time.sleep(self.delay)
             pydirectinput.press(paralyze)
             pydirectinput.press('enter')
+            time.sleep(self.delay)
             if not heal and not mana:
                 continue
             screen_gray = capture_screen()
             if heal:
                 is_hp_half = analyze_screen(screen_gray, half_hp_template)
-                while is_hp_half:
-                    pydirectinput.press(heal)
-                    press_home()
-                    pydirectinput.press('enter')
-                    screen_gray = capture_screen()
-                    is_dead = analyze_screen(screen_gray, dead_template)
-                    if is_dead:
-                        exit_flag = True
-                        break
-                    is_hp_half = analyze_screen(screen_gray, half_hp_template)
-                if exit_flag:
-                    break
+                print(f'체력이 절반인가 {is_hp_half}')
+                if is_hp_half:
+                    heal_count = 0
+                    while heal_count < self.heal_count:
+                        pydirectinput.press(heal)
+                        self.press_home()
+                        pydirectinput.press('enter')
+                        heal_count += 1
+                        # screen_gray = capture_screen()
+                        # is_dead = analyze_screen(screen_gray, dead_template)
+                        # if is_dead:
+                        #     exit_flag = True
+                        #     break
+                        # is_hp_half = analyze_screen(screen_gray, half_hp_template)
+                        time.sleep(0.1)
+                    # if exit_flag:
+                    #     break
             if mana:
                 is_mp_half = analyze_screen(screen_gray, half_mp_template)
+                print(f'마나가 절반인가 {is_mp_half}')
                 if is_mp_half:
-                    is_gongjeung_succeed = analyze_screen(screen_gray, gongjeung_template)
-                    while not is_gongjeung_succeed:
+                    is_gongjeung_success = analyze_screen(screen_gray, half_mp_template)
+                    pydirectinput.press(mana)
+                    while not is_gongjeung_success:
                         pydirectinput.press(mana)
                         screen_gray = capture_screen()
                         is_dead = analyze_screen(screen_gray, dead_template)
                         if is_dead:
                             exit_flag = True
                             break
-                        is_gongjeung_succeed = analyze_screen(screen_gray, gongjeung_template)
-
-
+                        is_gongjeung_success = analyze_screen(screen_gray, half_mp_template)
+                        time.sleep(0.1)
+                if exit_flag:
+                    break
 
     def stop(self):
         self.is_running = False
@@ -308,6 +338,8 @@ def load_settings():
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.heal_count_input = None
+        self.delay_input = None
         self.is_running = False
         self.waiting_for_key = None
         self.macro_worker = MacroWorker()
@@ -354,6 +386,36 @@ class MainWindow(QMainWindow):
         grid_layout = QGridLayout()
         grid_layout.setSpacing(10)
         row = 0
+
+        delay_frame = QFrame()
+        delay_layout = QHBoxLayout(delay_frame)
+        delay_label = QLabel('스킬 딜레이 (초):')
+        self.delay_input = QDoubleSpinBox()
+        self.delay_input.setStyleSheet(StyleSheet.SPINBOX)
+        self.delay_input.setRange(0.01, 1.0)
+        self.delay_input.setSingleStep(0.01)
+        self.delay_input.setValue(DEFAULT_DELAY)
+        delay_layout.addWidget(delay_label)
+        delay_layout.addWidget(self.delay_input)
+        main_layout.addWidget(delay_frame)
+
+        # Add heal count input
+        heal_count_frame = QFrame()
+        heal_count_layout = QHBoxLayout(heal_count_frame)
+        heal_count_label = QLabel('기원 시전 횟수:')
+        self.heal_count_input = QSpinBox()
+        self.heal_count_input.setStyleSheet(StyleSheet.SPINBOX)
+        self.heal_count_input.setRange(1, 20)
+        self.heal_count_input.setValue(DEFAULT_HEAL_COUNT)
+        heal_count_layout.addWidget(heal_count_label)
+        heal_count_layout.addWidget(self.heal_count_input)
+        main_layout.addWidget(heal_count_frame)
+
+        # Add line separator
+        line = QFrame()
+        line.setFrameShape(QFrame.HLine)
+        line.setFrameShadow(QFrame.Sunken)
+        main_layout.addWidget(line)
 
         # 매크로 키는 별도로 처리
         macro_frame = QFrame()
@@ -431,21 +493,27 @@ class MainWindow(QMainWindow):
             self.status_label.setText(f'매크로 실행 키가 {macro_key}로 설정되었습니다.')
 
     def toggle_macro(self):
-        for key, value in keys.items():  # 기원, 공증, 신수마법만 체크
+        for key, value in keys.items():
             if keys[key]['required'] and value['key'] is None:
                 self.status_label.setText(f'{value['name']} 키가 등록되지 않았습니다.')
                 return
 
         self.is_running = not self.is_running
         if self.is_running:
+            self.macro_worker.delay = self.delay_input.value()
+            self.macro_worker.heal_count = self.heal_count_input.value()
             self.status_label.setText('매크로 실행중...')
             set_button_enabled(False)
+            self.delay_input.setEnabled(False)
+            self.heal_count_input.setEnabled(False)
             self.macro_worker.is_running = True
             self.macro_worker.start()
             self.tray_icon.showMessage(MACRO_NAME, "매크로 실행", QSystemTrayIcon.Information, 2000)
         else:
             self.status_label.setText('매크로가 중지되었습니다.')
             set_button_enabled(True)
+            self.delay_input.setEnabled(True)
+            self.heal_count_input.setEnabled(True)
             self.macro_worker.stop()
             self.tray_icon.showMessage(MACRO_NAME, "매크로 중지", QSystemTrayIcon.Information, 2000)
 
@@ -557,6 +625,6 @@ def main():
 
 
 if __name__ == '__main__':
-    pydirectinput.PAUSE = DELAY
+    pydirectinput.PAUSE = 0.01
     pydirectinput.FAILSAFE = False
     main()
