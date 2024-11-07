@@ -1,6 +1,7 @@
+주수리 헬퍼
+---
 
-![image](https://github.com/user-attachments/assets/2bfc542e-6110-45ab-a2c8-1c8e0e54b7c8)
-
+![image](https://github.com/user-attachments/assets/507d5c12-f52c-425f-8688-c582cbbaff41)
 
 보무는 매크로 실행 클릭 시 자신에게 한번만 시전됩니다.
 
