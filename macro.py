@@ -17,18 +17,11 @@ from PyQt5.QtWidgets import (
     QSystemTrayIcon, QMenu, QStyle, QHBoxLayout, QFrame, QGridLayout, QDoubleSpinBox, QSpinBox
 )
 
-# 설정 파일 경로
 SETTINGS_FILE = Path('./macro_settings.json')
 DEFAULT_DELAY = 0.1
 DEFAULT_HEAL_COUNT = 3
 
 MACRO_NAME = '주수리 헬퍼'
-# ICON = Path('assets/icon.png')
-# GITHUB_ICON = Path('assets/github_icon.png')
-# half_mp_template = cv2.imread('assets/half_mp.png', 0)
-# half_hp_template = cv2.imread('assets/half_hp.png', 0)
-# gongjeung_template = cv2.imread('assets/gongjeung.png', 0)
-# dead_template = cv2.imread('assets/dead.png', 0)
 
 ICON = Path(os.path.join(getattr(sys, '_MEIPASS', os.path.abspath('.')), 'assets', 'icon.png'))
 GITHUB_ICON = Path(os.path.join(getattr(sys, '_MEIPASS', os.path.abspath('.')), 'assets', 'github_icon.png'))
@@ -85,20 +78,6 @@ keys = {
         'button': None,
         'required': True
     },
-    # 'attack': {
-    #     'name': '신수마법(단일)',
-    #     'label': None,
-    #     'key': None,
-    #     'button': None,
-    #     'required': False
-    # },
-    # 'direction_attack': {
-    #     'name': '신수마법(첨)',
-    #     'label': None,
-    #     'key': None,
-    #     'button': None,
-    #     'required': False
-    # },
     'heal': {
         'name': '반피이하 자동 기원',
         'label': None,
@@ -268,21 +247,11 @@ class MacroWorker(QThread):
             if heal:
                 is_hp_half = analyze_screen(screen_gray, half_hp_template)
                 if is_hp_half:
-                    heal_count = 0
-                    while heal_count < self.heal_count:
+                    for i in range(self.heal_count):
                         pydirectinput.press(heal)
                         self.press_home()
                         pydirectinput.press('enter')
-                        heal_count += 1
-                        # screen_gray = capture_screen()
-                        # is_dead = analyze_screen(screen_gray, dead_template)
-                        # if is_dead:
-                        #     exit_flag = True
-                        #     break
-                        # is_hp_half = analyze_screen(screen_gray, half_hp_template)
                         time.sleep(0.2) # 기원 딜레이 0.2초 고정
-                    # if exit_flag:
-                    #     break
             if mana:
                 is_mp_half = analyze_screen(screen_gray, half_mp_template)
                 while is_mp_half:
@@ -346,24 +315,20 @@ class MainWindow(QMainWindow):
         self.setGeometry(300, 300, 400, 600)
         self.setStyleSheet(StyleSheet.MAIN_WINDOW)
 
-        # 메인 위젯과 레이아웃
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         main_layout = QVBoxLayout(central_widget)
         main_layout.setSpacing(15)
         main_layout.setContentsMargins(20, 20, 20, 20)
 
-        # 상단 타이틀 영역
         title_frame = QFrame()
         title_layout = QHBoxLayout(title_frame)
         title_layout.setContentsMargins(0, 0, 0, 0)
 
-        # 타이틀 레이블
-        title_label = QLabel('보무는 실행 시 한번만 겁니다. version 241107')
+        title_label = QLabel('version 241107')
         title_label.setFont(QFont('Arial', 16, QFont.Bold))
         title_layout.addWidget(title_label, alignment=Qt.AlignLeft)
 
-        # GitHub 버튼
         github_button = QPushButton()
         github_button.setStyleSheet(StyleSheet.GITHUB_BUTTON)
         github_button.setToolTip("GitHub 저장소 방문")
@@ -375,7 +340,6 @@ class MainWindow(QMainWindow):
 
         main_layout.addWidget(title_frame)
 
-        # 키 설정 그리드
         grid_layout = QGridLayout()
         grid_layout.setSpacing(10)
         row = 0
@@ -392,7 +356,6 @@ class MainWindow(QMainWindow):
         delay_layout.addWidget(self.delay_input)
         main_layout.addWidget(delay_frame)
 
-        # Add heal count input
         heal_count_frame = QFrame()
         heal_count_layout = QHBoxLayout(heal_count_frame)
         heal_count_label = QLabel('기원 시전 횟수:')
@@ -404,13 +367,11 @@ class MainWindow(QMainWindow):
         heal_count_layout.addWidget(self.heal_count_input)
         main_layout.addWidget(heal_count_frame)
 
-        # Add line separator
         line = QFrame()
         line.setFrameShape(QFrame.HLine)
         line.setFrameShadow(QFrame.Sunken)
         main_layout.addWidget(line)
 
-        # 매크로 키는 별도로 처리
         macro_frame = QFrame()
         macro_layout = QHBoxLayout(macro_frame)
         keys['macro_key']['button'] = QPushButton(f'{keys['macro_key']['name']} 키 설정')
@@ -422,7 +383,6 @@ class MainWindow(QMainWindow):
         macro_layout.addWidget(keys['macro_key']['label'])
         main_layout.addWidget(macro_frame)
 
-        # 구분선 추가
         line = QFrame()
         line.setFrameShape(QFrame.HLine)
         line.setFrameShadow(QFrame.Sunken)
@@ -578,7 +538,6 @@ class MainWindow(QMainWindow):
             else:
                 self.status_label.setText(f'{keys[self.waiting_for_key]['name']} 키가 설정되었습니다!')
 
-            # 설정 저장
             save_settings()
 
             # 상태 초기화
@@ -592,7 +551,6 @@ def convert_key_code_to_text(key_code):
 
 
 def set_button_enabled(is_enabled):
-    """모든 키 설정 버튼의 활성화 상태를 변경"""
     for value in keys.values():
         value['button'].setEnabled(is_enabled)
 
@@ -600,15 +558,12 @@ def set_button_enabled(is_enabled):
 def main():
     app = QApplication(sys.argv)
 
-    # 시스템 트레이 지원 확인
     if not QSystemTrayIcon.isSystemTrayAvailable():
         print('시스템 트레이를 지원하지 않는 시스템입니다.')
         sys.exit(1)
 
-    # 앱 스타일 설정
     app.setStyle('Fusion')
 
-    # 응용프로그램 아이콘 설정
     if ICON.exists():
         app.setWindowIcon(QIcon(str(ICON)))
 
