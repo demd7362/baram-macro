@@ -1,0 +1,9 @@
+
+![image](https://github.com/user-attachments/assets/2bfc542e-6110-45ab-a2c8-1c8e0e54b7c8)
+
+
+보무는 매크로 실행 클릭 시 자신에게 한번만 시전됩니다.
+
+스킬 딜레이는 중독 <-> 저주 <-> 마비간의 딜레이입니다.
+
+[다운로드](https://objectstorage.ap-chuncheon-1.oraclecloud.com/n/axns7vzun2pq/b/bucket-20231116-1622/o/%EC%A3%BC%EC%88%98%EB%A6%AC%ED%97%AC%ED%8D%BC.exe)
