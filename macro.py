@@ -269,7 +269,6 @@ class MacroWorker(QThread):
             screen_gray = capture_screen()
             if heal:
                 is_hp_half = analyze_screen(screen_gray, half_hp_template)
-                print(f'체력이 절반인가 {is_hp_half}')
                 if is_hp_half:
                     heal_count = 0
                     while heal_count < self.heal_count:
@@ -283,12 +282,11 @@ class MacroWorker(QThread):
                         #     exit_flag = True
                         #     break
                         # is_hp_half = analyze_screen(screen_gray, half_hp_template)
-                        time.sleep(0.1)
+                        time.sleep(0.2) # 기원 딜레이 0.2초 고정
                     # if exit_flag:
                     #     break
             if mana:
                 is_mp_half = analyze_screen(screen_gray, half_mp_template)
-                print(f'마나가 절반인가 {is_mp_half}')
                 if is_mp_half:
                     is_gongjeung_success = analyze_screen(screen_gray, half_mp_template)
                     pydirectinput.press(mana)
