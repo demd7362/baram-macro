@@ -59,9 +59,7 @@ def capture_screen():
 def analyze_screen(screen_gray, template):
     result = cv2.matchTemplate(screen_gray, template, cv2.TM_CCOEFF_NORMED)
     min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
-    print(f'max_val: {max_val}')
-    # 템플릿이 감지된 경우
-    return max_val >= 0.9  # 임계값을 조절하여 정확도 설정
+    return max_val >= 0.9
 
 
 key_map = {
@@ -246,12 +244,12 @@ class MacroWorker(QThread):
             pydirectinput.press(mujang)
             self.press_home()
             pydirectinput.press('enter')
-            time.sleep(0.05)
+            time.sleep(0.1)
         if boho:
             pydirectinput.press(boho)
             self.press_home()
             pydirectinput.press('enter')
-            time.sleep(0.05)
+            time.sleep(0.1)
 
         while self.is_running:
             pydirectinput.press(poison)
@@ -287,18 +285,15 @@ class MacroWorker(QThread):
                     #     break
             if mana:
                 is_mp_half = analyze_screen(screen_gray, half_mp_template)
-                if is_mp_half:
-                    is_gongjeung_success = analyze_screen(screen_gray, half_mp_template)
+                while is_mp_half:
                     pydirectinput.press(mana)
-                    while not is_gongjeung_success:
-                        pydirectinput.press(mana)
-                        screen_gray = capture_screen()
-                        is_dead = analyze_screen(screen_gray, dead_template)
-                        if is_dead:
-                            exit_flag = True
-                            break
-                        is_gongjeung_success = analyze_screen(screen_gray, half_mp_template)
-                        time.sleep(0.1)
+                    screen_gray = capture_screen()
+                    is_dead = analyze_screen(screen_gray, dead_template)
+                    if is_dead:
+                        exit_flag = True
+                        break
+                    is_mp_half = analyze_screen(screen_gray, half_mp_template)
+                    time.sleep(0.2)
                 if exit_flag:
                     break
 
