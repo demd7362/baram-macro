@@ -92,26 +92,26 @@ keys = {
         'button': None,
         'required': False
     },
-    'poison': {
-        'name': '중독',
+    'skill_one': {
+        'name': '스킬1',
         'label': None,
         'key': None,
         'button': None,
         'required': True
     },
-    'curse': {
-        'name': '저주',
+    'skill_two': {
+        'name': '스킬2',
         'label': None,
         'key': None,
         'button': None,
-        'required': True
+        'required': False
     },
-    'paralyze': {
-        'name': '마비',
+    'skill_three': {
+        'name': '스킬3',
         'label': None,
         'key': None,
         'button': None,
-        'required': True
+        'required': False
     },
     'mujang': {
         'name': '무장',
@@ -212,9 +212,9 @@ class MacroWorker(QThread):
     def run(self):
         heal = keys['heal']['key']
         mana = keys['mana']['key']
-        poison = keys['poison']['key']
-        curse = keys['curse']['key']
-        paralyze = keys['paralyze']['key']
+        skill_one = keys['skill_one']['key']
+        skill_two = keys['skill_two']['key']
+        skill_three = keys['skill_three']['key']
         mujang = keys['mujang']['key']
         boho = keys['boho']['key']
         exit_flag = False
@@ -223,24 +223,26 @@ class MacroWorker(QThread):
             pydirectinput.press(mujang)
             self.press_home()
             pydirectinput.press('enter')
-            time.sleep(0.1)
+            time.sleep(0.02)
         if boho:
             pydirectinput.press(boho)
             self.press_home()
             pydirectinput.press('enter')
-            time.sleep(0.1)
+            time.sleep(0.02)
 
         while self.is_running:
-            pydirectinput.press(poison)
+            pydirectinput.press(skill_one)
             pydirectinput.press('up')
             pydirectinput.press('enter')
             time.sleep(self.delay)
-            pydirectinput.press(curse)
-            pydirectinput.press('enter')
-            time.sleep(self.delay)
-            pydirectinput.press(paralyze)
-            pydirectinput.press('enter')
-            time.sleep(self.delay)
+            if skill_two:
+                pydirectinput.press(skill_two)
+                pydirectinput.press('enter')
+                time.sleep(self.delay)
+            if skill_three:
+                pydirectinput.press(skill_three)
+                pydirectinput.press('enter')
+                time.sleep(self.delay)
             if not heal and not mana:
                 continue
             screen_gray = capture_screen()
@@ -251,20 +253,21 @@ class MacroWorker(QThread):
                         pydirectinput.press(heal)
                         self.press_home()
                         pydirectinput.press('enter')
-                        time.sleep(0.2) # 기원 딜레이 0.2초 고정
+                        time.sleep(0.15) # 기원 딜레이
             if mana:
                 is_mp_half = analyze_screen(screen_gray, half_mp_template)
-                while is_mp_half:
+                while is_mp_half and self.is_running:
                     pydirectinput.press(mana)
+                    time.sleep(0.2)
                     screen_gray = capture_screen()
                     is_dead = analyze_screen(screen_gray, dead_template)
                     if is_dead:
                         exit_flag = True
                         break
                     is_mp_half = analyze_screen(screen_gray, half_mp_template)
-                    time.sleep(0.2)
                 if exit_flag:
                     break
+            # time.sleep(self.delay)
 
     def stop(self):
         self.is_running = False
