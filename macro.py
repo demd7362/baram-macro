@@ -233,7 +233,6 @@ class MacroWorker(QThread):
         skill_three = keys['skill_three']['key']
         mujang = keys['mujang']['key']
         boho = keys['boho']['key']
-        is_target_changed = False
 
         if mujang:
             pydirectinput.press(mujang)
@@ -247,6 +246,7 @@ class MacroWorker(QThread):
             time.sleep(0.02)
 
         while self.is_running:
+            is_target_changed = False
             pydirectinput.press(skill_one)
             if not self.checkboxes.get('skill_one', False):
                 is_target_changed = True
