@@ -14,7 +14,7 @@ from PyQt5.QtCore import Qt, QThread, QSize, QUrl
 from PyQt5.QtGui import QFont, QDesktopServices, QIcon
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QLabel, QPushButton, QVBoxLayout, QWidget,
-    QSystemTrayIcon, QMenu, QStyle, QHBoxLayout, QFrame, QGridLayout, QDoubleSpinBox, QSpinBox
+    QSystemTrayIcon, QMenu, QStyle, QHBoxLayout, QFrame, QGridLayout, QDoubleSpinBox, QSpinBox, QCheckBox
 )
 
 SETTINGS_FILE = Path('./macro_settings.json')
@@ -90,28 +90,32 @@ keys = {
         'label': None,
         'key': None,
         'button': None,
-        'required': False
+        'required': False,
+        'checkbox': '실패 시 기원'
     },
     'skill_one': {
         'name': '스킬1',
         'label': None,
         'key': None,
         'button': None,
-        'required': True
+        'required': True,
+        'checkbox': '즉시 시전'
     },
     'skill_two': {
         'name': '스킬2',
         'label': None,
         'key': None,
         'button': None,
-        'required': False
+        'required': False,
+        'checkbox': '즉시 시전'
     },
     'skill_three': {
         'name': '스킬3',
         'label': None,
         'key': None,
         'button': None,
-        'required': False
+        'required': False,
+        'checkbox': '즉시 시전'
     },
     'mujang': {
         'name': '무장',
@@ -196,6 +200,14 @@ class StyleSheet:
             border: 1px solid #2196F3;
         }
     """
+    CHECKBOX = """
+        QCheckBox {
+            padding: 5px;
+        }
+        QCheckBox:hover {
+            color: #2196F3;
+        }
+    """
 
 
 class MacroWorker(QThread):
@@ -204,10 +216,14 @@ class MacroWorker(QThread):
         self.is_running = False
         self.delay = DEFAULT_DELAY
         self.heal_count = DEFAULT_HEAL_COUNT
+        self.checkboxes = {}  # 체크박스 상태를 저장할 딕셔너리
 
     def press_home(self):
         keyboard.press_and_release('home')  # pydirectinput home 미작동
         time.sleep(self.delay)
+
+    def target_change(self):
+        pydirectinput.press('up')
 
     def run(self):
         heal = keys['heal']['key']
@@ -217,7 +233,7 @@ class MacroWorker(QThread):
         skill_three = keys['skill_three']['key']
         mujang = keys['mujang']['key']
         boho = keys['boho']['key']
-        exit_flag = False
+        is_target_changed = False
 
         if mujang:
             pydirectinput.press(mujang)
@@ -232,19 +248,31 @@ class MacroWorker(QThread):
 
         while self.is_running:
             pydirectinput.press(skill_one)
-            pydirectinput.press('up')
-            pydirectinput.press('enter')
+            if not self.checkboxes.get('skill_one', False):
+                is_target_changed = True
+                self.target_change()
+                pydirectinput.press('enter')
             time.sleep(self.delay)
+
             if skill_two:
                 pydirectinput.press(skill_two)
-                pydirectinput.press('enter')
+                if not self.checkboxes.get('skill_two', False):
+                    if not is_target_changed:
+                        self.target_change()
+                    pydirectinput.press('enter')
                 time.sleep(self.delay)
+
             if skill_three:
                 pydirectinput.press(skill_three)
-                pydirectinput.press('enter')
+                if not self.checkboxes.get('skill_three', False):
+                    if not is_target_changed:
+                        self.target_change()
+                    pydirectinput.press('enter')
                 time.sleep(self.delay)
+
             if not heal and not mana:
                 continue
+
             screen_gray = capture_screen()
             if heal:
                 is_hp_half = analyze_screen(screen_gray, half_hp_template)
@@ -253,21 +281,19 @@ class MacroWorker(QThread):
                         pydirectinput.press(heal)
                         self.press_home()
                         pydirectinput.press('enter')
-                        time.sleep(0.15) # 기원 딜레이
+                        time.sleep(0.15)  # 기원 딜레이
+
             if mana:
                 is_mp_half = analyze_screen(screen_gray, half_mp_template)
                 while is_mp_half and self.is_running:
                     pydirectinput.press(mana)
-                    time.sleep(0.2)
+                    time.sleep(0.5)
                     screen_gray = capture_screen()
-                    is_dead = analyze_screen(screen_gray, dead_template)
-                    if is_dead:
-                        exit_flag = True
-                        break
                     is_mp_half = analyze_screen(screen_gray, half_mp_template)
-                if exit_flag:
-                    break
-            # time.sleep(self.delay)
+                    if is_mp_half and self.checkboxes.get('mana', False) and heal:  # 공증 실패 시 기원
+                        pydirectinput.press(heal)
+                        self.press_home()
+                        pydirectinput.press('enter')
 
     def stop(self):
         self.is_running = False
@@ -276,7 +302,10 @@ class MacroWorker(QThread):
 def save_settings():
     settings = {}
     for key, value in keys.items():
-        settings[key] = value['key']
+        settings[key] = {
+            'key': value['key'],
+            'checkbox_state': value.get('checkbox_widget', {}).isChecked() if 'checkbox_widget' in value else None
+        }
 
     try:
         with open(SETTINGS_FILE, 'w', encoding='utf-8') as f:
@@ -293,9 +322,13 @@ def load_settings():
 
             for key, value in settings.items():
                 if key in keys:
-                    keys[key]['key'] = value
-                    if value:
-                        keys[key]['label'].setText(f'{keys[key]['name']} 키: {value}')
+                    keys[key]['key'] = value.get('key')
+                    if keys[key]['key']:
+                        keys[key]['label'].setText(f'{keys[key]['name']} 키: {keys[key]['key']}')
+
+                    # 체크박스 상태 로드
+                    if 'checkbox_widget' in keys[key] and value.get('checkbox_state') is not None:
+                        keys[key]['checkbox_widget'].setChecked(value['checkbox_state'])
     except Exception as e:
         print(f"Error loading settings: {e}")
 
@@ -308,9 +341,9 @@ class MainWindow(QMainWindow):
         self.is_running = False
         self.waiting_for_key = None
         self.macro_worker = MacroWorker()
-        self.init_ui()
+        self.init_ui()  # UI 초기화를 먼저 하여 체크박스 위젯을 생성
+        load_settings()  # 그 다음 설정을 로드
         self.init_tray()
-        load_settings()
         self.setup_global_hotkey()
 
     def init_ui(self):
@@ -328,7 +361,7 @@ class MainWindow(QMainWindow):
         title_layout = QHBoxLayout(title_frame)
         title_layout.setContentsMargins(0, 0, 0, 0)
 
-        title_label = QLabel('version 241107')
+        title_label = QLabel('version 241108')
         title_label.setFont(QFont('Arial', 16, QFont.Bold))
         title_layout.addWidget(title_label, alignment=Qt.AlignLeft)
 
@@ -399,6 +432,10 @@ class MainWindow(QMainWindow):
             frame = QFrame()
             layout = QHBoxLayout(frame)
 
+            button_label_frame = QFrame()
+            button_label_layout = QHBoxLayout(button_label_frame)
+            button_label_layout.setContentsMargins(0, 0, 0, 0)
+
             value['button'] = QPushButton(f'{value['name'] + ('[필수]' if value['required'] else '')} 키 설정')
             value['button'].setStyleSheet(StyleSheet.BUTTON)
             value['button'].clicked.connect(lambda checked, k=key: self.start_key_binding(k))
@@ -406,8 +443,18 @@ class MainWindow(QMainWindow):
             value['label'] = QLabel(f'{value['name']} 키: 미설정')
             value['label'].setStyleSheet(StyleSheet.KEY_LABEL)
 
-            layout.addWidget(value['button'])
-            layout.addWidget(value['label'])
+            button_label_layout.addWidget(value['button'])
+            button_label_layout.addWidget(value['label'])
+
+            layout.addWidget(button_label_frame)
+
+            if 'checkbox' in value:
+                checkbox = QCheckBox(value['checkbox'])
+                checkbox.setStyleSheet(StyleSheet.CHECKBOX)
+                checkbox.setChecked(value.get('checkbox_state', False))
+                checkbox.stateChanged.connect(lambda state, k=key: self.on_checkbox_changed(k, state))
+                value['checkbox_widget'] = checkbox
+                layout.addWidget(checkbox)
 
             grid_layout.addWidget(frame, row, 0)
             row += 1
@@ -421,6 +468,11 @@ class MainWindow(QMainWindow):
         main_layout.addWidget(self.status_label)
 
         self.show()
+
+    def on_checkbox_changed(self, key, state):
+        keys[key]['checkbox_state'] = bool(state)
+        self.macro_worker.checkboxes[key] = bool(state)
+        save_settings()
 
     def init_tray(self):
         self.tray_icon = QSystemTrayIcon(self)
@@ -458,10 +510,20 @@ class MainWindow(QMainWindow):
         if self.is_running:
             self.macro_worker.delay = self.delay_input.value()
             self.macro_worker.heal_count = self.heal_count_input.value()
+            # 체크박스 상태 업데이트
+            self.macro_worker.checkboxes = {
+                key: value['checkbox_widget'].isChecked()
+                for key, value in keys.items()
+                if 'checkbox_widget' in value
+            }
             self.status_label.setText('매크로 실행중...')
             set_button_enabled(False)
             self.delay_input.setEnabled(False)
             self.heal_count_input.setEnabled(False)
+            # 체크박스 비활성화
+            for value in keys.values():
+                if 'checkbox_widget' in value:
+                    value['checkbox_widget'].setEnabled(False)
             self.macro_worker.is_running = True
             self.macro_worker.start()
             self.tray_icon.showMessage(MACRO_NAME, "매크로 실행", QSystemTrayIcon.Information, 2000)
@@ -470,6 +532,10 @@ class MainWindow(QMainWindow):
             set_button_enabled(True)
             self.delay_input.setEnabled(True)
             self.heal_count_input.setEnabled(True)
+            # 체크박스 활성화
+            for value in keys.values():
+                if 'checkbox_widget' in value:
+                    value['checkbox_widget'].setEnabled(True)
             self.macro_worker.stop()
             self.tray_icon.showMessage(MACRO_NAME, "매크로 중지", QSystemTrayIcon.Information, 2000)
 
