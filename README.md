@@ -8,4 +8,4 @@
 
 스킬 딜레이는 스킬1 <-> 스킬2 <-> 스킬3 간의 딜레이입니다.
 
-[다운로드](https://objectstorage.ap-chuncheon-1.oraclecloud.com/n/axns7vzun2pq/b/bucket-20231116-1622/o/%EC%A3%BC%EC%88%98%EB%A6%AC%ED%97%AC%ED%8D%BC.exe)
+[다운로드](https://objectstorage.ap-chuncheon-1.oraclecloud.com/n/axns7vzun2pq/b/bucket-20231116-1622/o/%EC%A3%BC%EC%88%98%EB%A6%AC%ED%97%AC%ED%8D%BC.zip)
