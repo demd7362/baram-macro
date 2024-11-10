@@ -58,7 +58,7 @@ keys = {
 SETTINGS_FILE = Path('./pilsal_settings.json')
 MACRO_NAME = '필살 헬퍼'
 available_alphabet_keys = set([chr(i) for i in range(65, 91)] + [chr(i) for i in range(97, 123)])  # a ~ Z
-delay = 0.07  # Default delay value
+delay = 0.05  # Default delay value
 # Asset paths
 ICON = Path(os.path.join(getattr(sys, '_MEIPASS', os.path.abspath('.')), 'assets', 'pilsal.png'))
 GITHUB_ICON = Path(os.path.join(getattr(sys, '_MEIPASS', os.path.abspath('.')), 'assets', 'github_icon.png'))
