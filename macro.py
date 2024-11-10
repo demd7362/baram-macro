@@ -98,7 +98,7 @@ keys = {
         'label': None,
         'key': None,
         'button': None,
-        'required': True,
+        'required': False,
         'checkbox': '즉시 시전'
     },
     'skill_two': {
@@ -220,7 +220,6 @@ class MacroWorker(QThread):
 
     def press_home(self):
         keyboard.press_and_release('home')  # pydirectinput home 미작동
-        time.sleep(self.delay)
 
     def target_change(self):
         pydirectinput.press('up')
@@ -233,7 +232,11 @@ class MacroWorker(QThread):
         skill_three = keys['skill_three']['key']
         mujang = keys['mujang']['key']
         boho = keys['boho']['key']
-
+        def heal_myself():
+            pydirectinput.press(heal)
+            time.sleep(0.25)
+            self.press_home()
+            pydirectinput.press('enter')
         if mujang:
             pydirectinput.press(mujang)
             self.press_home()
@@ -247,12 +250,13 @@ class MacroWorker(QThread):
 
         while self.is_running:
             is_target_changed = False
-            pydirectinput.press(skill_one)
-            if not self.checkboxes.get('skill_one', False):
-                is_target_changed = True
-                self.target_change()
-                pydirectinput.press('enter')
-            time.sleep(self.delay)
+            if skill_one:
+                pydirectinput.press(skill_one)
+                if not self.checkboxes.get('skill_one', False):
+                    is_target_changed = True
+                    self.target_change()
+                    pydirectinput.press('enter')
+                time.sleep(self.delay)
 
             if skill_two:
                 pydirectinput.press(skill_two)
@@ -277,23 +281,20 @@ class MacroWorker(QThread):
             if heal:
                 is_hp_half = analyze_screen(screen_gray, half_hp_template)
                 if is_hp_half:
-                    for i in range(self.heal_count):
-                        pydirectinput.press(heal)
-                        self.press_home()
-                        pydirectinput.press('enter')
-                        time.sleep(0.15)  # 기원 딜레이
+                    for _ in range(self.heal_count):
+                        heal_myself()
 
             if mana:
                 is_mp_half = analyze_screen(screen_gray, half_mp_template)
                 while is_mp_half and self.is_running:
                     pydirectinput.press(mana)
-                    time.sleep(0.5)
+                    time.sleep(0.3)
                     screen_gray = capture_screen()
                     is_mp_half = analyze_screen(screen_gray, half_mp_template)
-                    if is_mp_half and self.checkboxes.get('mana', False) and heal:  # 공증 실패 시 기원
-                        pydirectinput.press(heal)
-                        self.press_home()
-                        pydirectinput.press('enter')
+                    if heal and is_mp_half and self.checkboxes.get('mana', False):
+                        for _ in range(self.heal_count):
+                            heal_myself()
+
 
     def stop(self):
         self.is_running = False
