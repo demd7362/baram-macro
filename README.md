@@ -3,6 +3,7 @@
 
 ![image](https://github.com/user-attachments/assets/1121311f-b966-481e-8943-c38ef156ba44)
 
+### 주수리 헬퍼
 
 보무는 매크로 실행 클릭 시 자신에게 한번만 시전됩니다.
 
@@ -16,12 +17,13 @@
 
 ![image](https://github.com/user-attachments/assets/d8efbdcf-ae82-4606-8eec-ba3481209af2)
 
+### 동동필 헬퍼
 
-필(필살검무, 건곤, 백호검무 등) 사용 후 동동주 2잔 먹는 매크로입니다.
+필살 사용 후 동동주 2잔 먹는 매크로입니다.
 
 등록된 동동주 중에서 랜덤으로 2잔을 먹습니다. 많이 등록해놓으면 좋습니다.
 
 잘 안된다면 딜레이 조정해보세요.
 
-[다운로드](https://objectstorage.ap-chuncheon-1.oraclecloud.com/n/axns7vzun2pq/b/bucket-20231116-1622/o/%ED%95%84%EC%82%B4%ED%97%AC%ED%8D%BC.exe)
+[다운로드](https://objectstorage.ap-chuncheon-1.oraclecloud.com/n/axns7vzun2pq/b/bucket-20231116-1622/o/%EB%8F%99%EB%8F%99%ED%95%84%ED%97%AC%ED%8D%BC.exe)
 
