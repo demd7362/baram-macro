@@ -21,7 +21,7 @@ SETTINGS_FILE = Path('./macro_settings.json')
 DEFAULT_DELAY = 0.1
 DEFAULT_HEAL_COUNT = 3
 
-MACRO_NAME = '주수리 헬퍼'
+MACRO_NAME = '주수리 헬퍼 v0.1'
 
 ICON = Path(os.path.join(getattr(sys, '_MEIPASS', os.path.abspath('.')), 'assets', 'icon.png'))
 GITHUB_ICON = Path(os.path.join(getattr(sys, '_MEIPASS', os.path.abspath('.')), 'assets', 'github_icon.png'))
@@ -362,7 +362,7 @@ class MainWindow(QMainWindow):
         title_layout = QHBoxLayout(title_frame)
         title_layout.setContentsMargins(0, 0, 0, 0)
 
-        title_label = QLabel('version 241108')
+        title_label = QLabel('창모드 실행 권장드립니다.')
         title_label.setFont(QFont('Arial', 16, QFont.Bold))
         title_layout.addWidget(title_label, alignment=Qt.AlignLeft)
 
@@ -372,7 +372,7 @@ class MainWindow(QMainWindow):
         github_button.setIcon(QIcon(str(GITHUB_ICON)))  # GitHub 아이콘 설정
         github_button.setIconSize(QSize(24, 24))
         github_button.clicked.connect(
-            lambda: QDesktopServices.openUrl(QUrl("https://github.com/demd7362/jusuri-helper")))
+            lambda: QDesktopServices.openUrl(QUrl("https://github.com/demd7362/baram-macro")))
         title_layout.addWidget(github_button, alignment=Qt.AlignRight)
 
         main_layout.addWidget(title_frame)
