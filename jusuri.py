@@ -17,13 +17,13 @@ from PyQt5.QtWidgets import (
     QSystemTrayIcon, QMenu, QStyle, QHBoxLayout, QFrame, QGridLayout, QDoubleSpinBox, QSpinBox, QCheckBox
 )
 
-SETTINGS_FILE = Path('./macro_settings.json')
+SETTINGS_FILE = Path('./jusuri_settings.json')
 DEFAULT_DELAY = 0.1
 DEFAULT_HEAL_COUNT = 3
 
 MACRO_NAME = '주수리 헬퍼 v0.1'
 
-ICON = Path(os.path.join(getattr(sys, '_MEIPASS', os.path.abspath('.')), 'assets', 'icon.png'))
+ICON = Path(os.path.join(getattr(sys, '_MEIPASS', os.path.abspath('.')), 'assets', 'jusuri.png'))
 GITHUB_ICON = Path(os.path.join(getattr(sys, '_MEIPASS', os.path.abspath('.')), 'assets', 'github_icon.png'))
 half_mp_template = cv2.imread(os.path.join(getattr(sys, '_MEIPASS', os.path.abspath('.')), 'assets', 'half_mp.png'), 0)
 half_hp_template = cv2.imread(os.path.join(getattr(sys, '_MEIPASS', os.path.abspath('.')), 'assets', 'half_hp.png'), 0)
@@ -220,6 +220,7 @@ class MacroWorker(QThread):
 
     def press_home(self):
         keyboard.press_and_release('home')  # pydirectinput home 미작동
+        time.sleep(0.01)
 
     def target_change(self):
         pydirectinput.press('up')
@@ -372,7 +373,7 @@ class MainWindow(QMainWindow):
         github_button.setIcon(QIcon(str(GITHUB_ICON)))  # GitHub 아이콘 설정
         github_button.setIconSize(QSize(24, 24))
         github_button.clicked.connect(
-            lambda: QDesktopServices.openUrl(QUrl("https://github.com/demd7362/baram-macro")))
+            lambda: QDesktopServices.openUrl(QUrl("https://github.com/demd7362/baram-helper")))
         title_layout.addWidget(github_button, alignment=Qt.AlignRight)
 
         main_layout.addWidget(title_frame)

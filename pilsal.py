@@ -56,7 +56,7 @@ keys = {
 }
 
 SETTINGS_FILE = Path('./pilsal_settings.json')
-MACRO_NAME = '필살 헬퍼'
+MACRO_NAME = '동동필 헬퍼'
 available_alphabet_keys = set([chr(i) for i in range(65, 91)] + [chr(i) for i in range(97, 123)])  # a ~ Z
 delay = 0.05  # Default delay value
 # Asset paths
@@ -258,7 +258,7 @@ class MainWindow(QMainWindow):
         github_button.setIcon(QIcon(str(GITHUB_ICON)))
         github_button.setIconSize(QSize(28, 28))
         github_button.clicked.connect(
-            lambda: QDesktopServices.openUrl(QUrl("https://github.com/demd7362/baram-macro")))
+            lambda: QDesktopServices.openUrl(QUrl("https://github.com/demd7362/baram-helper")))
         header_layout.addWidget(github_button, alignment=Qt.AlignRight | Qt.AlignVCenter)
 
         main_layout.addWidget(header_frame)
