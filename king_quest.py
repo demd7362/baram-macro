@@ -157,11 +157,11 @@ def capture_screen():
     return screen_gray
 
 
-def analyze_screen(screen_gray, template):
+def analyze_screen(screen_gray, template, confidence=0.99):
     result = cv2.matchTemplate(screen_gray, template, cv2.TM_CCOEFF_NORMED)
     min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
     print(f'max val{max_val}')
-    return max_val >= 0.99
+    return max_val >= confidence
 
 
 def find_and_click_template(template, confidence=0.9):
@@ -197,7 +197,7 @@ class MacroWorker(QThread):
                 pydirectinput.press('esc')
                 continue
             screen_gray = capture_screen()
-            ui_open = analyze_screen(screen_gray, quit_button_template)
+            ui_open = analyze_screen(screen_gray, quit_button_template, confidence=0.94)
             if not ui_open:
                 continue
 
