@@ -157,14 +157,14 @@ def capture_screen():
     return screen_gray
 
 
-def analyze_screen(screen_gray, template, confidence=0.99):
+def analyze_screen(screen_gray, template, confidence):
     result = cv2.matchTemplate(screen_gray, template, cv2.TM_CCOEFF_NORMED)
     min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
     print(f'max val{max_val}')
     return max_val >= confidence
 
 
-def find_and_click_template(template, confidence=0.9):
+def find_and_click_template(template, confidence):
     screen_gray = capture_screen()
     result = cv2.matchTemplate(screen_gray, template, cv2.TM_CCOEFF_NORMED)
     min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
@@ -191,17 +191,17 @@ class MacroWorker(QThread):
 
     def run(self):
         while self.is_running:
-            clicked = find_and_click_template(king_template)
+            clicked = find_and_click_template(king_template, confidence=0.8)
             time.sleep(0.5)
             if not clicked:
                 pydirectinput.press('esc')
                 continue
             screen_gray = capture_screen()
-            ui_open = analyze_screen(screen_gray, quit_button_template, confidence=0.94)
+            ui_open = analyze_screen(screen_gray, quit_button_template, confidence=0.8)
             if not ui_open:
                 continue
 
-            is_cancel = analyze_screen(screen_gray, cancel_template)
+            is_cancel = analyze_screen(screen_gray, cancel_template, confidence=0.9)
             if is_cancel:
                 print('왕퀘 취소 메세지')
                 time.sleep(0.5)
@@ -226,7 +226,7 @@ class MacroWorker(QThread):
             time.sleep(0.5)
             screen_gray = capture_screen()
             for monster in monsters:
-                found = analyze_screen(screen_gray, templates[monster])
+                found = analyze_screen(screen_gray, templates[monster], confidence=0.99)
                 if found:
                     print('found')
                     self.is_running = False
