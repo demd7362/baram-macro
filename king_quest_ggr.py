@@ -32,41 +32,29 @@ key_map = {
 
 monsters = set()
 
-ghost_template = cv2.imread(
-    os.path.join(getattr(sys, '_MEIPASS', os.path.abspath('.')), 'assets', 'ghost.png'), 0)
-chogeup_ghost_template = cv2.imread(
-    os.path.join(getattr(sys, '_MEIPASS', os.path.abspath('.')), 'assets', 'chogeup_ghost.png'), 0)
-gogeup_ghost_template = cv2.imread(
-    os.path.join(getattr(sys, '_MEIPASS', os.path.abspath('.')), 'assets', 'gogeup_ghost.png'), 0)
-jeongal_template = cv2.imread(
-    os.path.join(getattr(sys, '_MEIPASS', os.path.abspath('.')), 'assets', 'jeongal.png'), 0)
-jeongaljang_template = cv2.imread(
-    os.path.join(getattr(sys, '_MEIPASS', os.path.abspath('.')), 'assets', 'jeongaljang.png'), 0)
-seohyeon_gajae_template = cv2.imread(
-    os.path.join(getattr(sys, '_MEIPASS', os.path.abspath('.')), 'assets', 'seohyeon_gajae.png'), 0)
-chunyu_template = cv2.imread(
-    os.path.join(getattr(sys, '_MEIPASS', os.path.abspath('.')), 'assets', 'chunyu.png'), 0)
-bul_template = cv2.imread(
-    os.path.join(getattr(sys, '_MEIPASS', os.path.abspath('.')), 'assets', 'bul.png'), 0)
-dalgyal_template = cv2.imread(
-    os.path.join(getattr(sys, '_MEIPASS', os.path.abspath('.')), 'assets', 'dalgyal.png'), 0)
+skeleton_template = cv2.imread(
+    os.path.join(getattr(sys, '_MEIPASS', os.path.abspath('.')), 'assets', 'skeleton.png'), 0)
+sword_skeleton_template = cv2.imread(
+    os.path.join(getattr(sys, '_MEIPASS', os.path.abspath('.')), 'assets', 'sword_skeleton.png'), 0)
+mongdal_template = cv2.imread(
+    os.path.join(getattr(sys, '_MEIPASS', os.path.abspath('.')), 'assets', 'mongdal.png'), 0)
+centipede_template = cv2.imread(
+    os.path.join(getattr(sys, '_MEIPASS', os.path.abspath('.')), 'assets', 'centipede.png'), 0)
+bitjaroo_template = cv2.imread(
+    os.path.join(getattr(sys, '_MEIPASS', os.path.abspath('.')), 'assets', 'bitjaroo.png'), 0)
 templates = {
-    "전갈": jeongal_template,
-    "전갈장": jeongaljang_template,
-    "서현가재": seohyeon_gajae_template,
-    "유령": ghost_template,
-    "초급유령": chogeup_ghost_template,
-    "고급유령": gogeup_ghost_template,
-    "처녀귀신": chunyu_template,
-    "불귀신": bul_template,
-    "달걀귀신": dalgyal_template,
+    "해골": skeleton_template,
+    "쾌도해골": sword_skeleton_template,
+    "몽달귀신": mongdal_template,
+    "독충": centipede_template,
+    "빗자루귀신": bitjaroo_template,
 }
 
 quit_button_template = cv2.imread(
     os.path.join(getattr(sys, '_MEIPASS', os.path.abspath('.')), 'assets', 'quit_button.png'), 0)
 disabled_ok_button_template = cv2.imread(
     os.path.join(getattr(sys, '_MEIPASS', os.path.abspath('.')), 'assets', 'disabled_ok_button.png'), 0)
-king_template = cv2.imread(os.path.join(getattr(sys, '_MEIPASS', os.path.abspath('.')), 'assets', 'king.png'), 0)
+king_template = cv2.imread(os.path.join(getattr(sys, '_MEIPASS', os.path.abspath('.')), 'assets', 'king_ggr.png'), 0)
 cancel_template = cv2.imread(os.path.join(getattr(sys, '_MEIPASS', os.path.abspath('.')), 'assets', 'cancel.png'), 0)
 
 MACRO_NAME = '왕퀘 헬퍼'
@@ -254,7 +242,7 @@ class MainWindow(QMainWindow):
 
     def init_ui(self):
         self.setWindowTitle(MACRO_NAME)
-        self.setFixedSize(900, 250)
+        self.setFixedSize(550, 250)
         self.setStyleSheet(StyleSheet.MAIN_WINDOW)
 
         central_widget = QWidget()
@@ -300,15 +288,11 @@ class MainWindow(QMainWindow):
 
         checkbox_layout = QHBoxLayout()
         self.checkboxes = {
-            "전갈": QCheckBox("전갈"),
-            "전갈장": QCheckBox("전갈장"),
-            "서현가재": QCheckBox("서현가재"),
-            "유령": QCheckBox("유령"),
-            "초급유령": QCheckBox("초급유령"),
-            "고급유령": QCheckBox("고급유령"),
-            "처녀귀신": QCheckBox("처녀귀신"),
-            "불귀신": QCheckBox("불귀신"),
-            "달걀귀신": QCheckBox("달걀귀신"),
+            "해골": QCheckBox("해골"),
+            "쾌도해골": QCheckBox("쾌도해골"),
+            "몽달귀신": QCheckBox("몽달귀신"),
+            "독충": QCheckBox("독충"),
+            "빗자루귀신": QCheckBox("빗자루귀신"),
         }
         for checkbox in self.checkboxes.values():
             checkbox.stateChanged.connect(self.update_monsters)
